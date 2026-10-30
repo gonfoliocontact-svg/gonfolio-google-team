@@ -3,10 +3,10 @@
  const element=id=>document.getElementById(id);
  const status=message=>{element('status').textContent=message;};
  const params=new URLSearchParams(location.hash.slice(1));
- const state=params.get('state'),expected=params.get('account');
+ const state=params.get('state'),expected=params.get('account'),expectedFolder=params.get('folder');
  history.replaceState(null,'',location.pathname);
  const appRequest=!!state||!!expected;
- const bindingValid=!appRequest||(params.getAll('state').length===1&&params.getAll('account').length===1&&/^[a-f0-9-]{36}$/i.test(state??'')&&/^[a-zA-Z0-9_-]{1,256}$/.test(expected??''));
+ const bindingValid=(!expectedFolder||(params.getAll('folder').length===1&&/^[a-zA-Z0-9_-]{1,256}$/.test(expectedFolder)))&&(!appRequest||(params.getAll('state').length===1&&params.getAll('account').length===1&&/^[a-f0-9-]{36}$/i.test(state??'')&&/^[a-zA-Z0-9_-]{1,256}$/.test(expected??'')));
  let selecting=false,picker;
  function load(src){return new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=()=>reject(Error('無法連線 Google，請檢查網路並重新整理。'));document.head.appendChild(s);});}
  async function json(path,token){
@@ -20,13 +20,14 @@
  function fail(error){finish();status(error instanceof Error?error.message:'授權未完成，請重試。');}
  async function chosen(doc,token,account){
   if(!doc||doc.mimeType!=='application/vnd.google-apps.folder'||!/^[a-zA-Z0-9_-]{1,256}$/.test(doc.id))throw Error('請選擇一個資料夾。');
+  if(expectedFolder&&doc.id!==expectedFolder)throw Error('請選擇邀請指定的團隊資料夾，沒有加入其他資料夾。');
   const folder=await json('files/'+encodeURIComponent(doc.id)+'?supportsAllDrives=true&fields=id,name,mimeType,trashed,capabilities(canAddChildren)',token);
   if(folder.id!==doc.id||folder.trashed||folder.mimeType!=='application/vnd.google-apps.folder')throw Error('選取的資料夾無法使用，請重新選擇。');
   const code='gonfolio-team:'+encodeURIComponent(JSON.stringify({v:1,provider:'google',folderId:folder.id}));
   element('result').value=code;element('result-panel').hidden=false;element('copy').disabled=false;
   const returnLink=element('return');
   if(appRequest){returnLink.href='work-camera://team-picker?'+new URLSearchParams({state,account,folderId:folder.id});returnLink.hidden=false;}
-  status('已授權「'+folder.name+'」。'+(folder.capabilities?.canAddChildren?'可查看及上傳。':'目前只有查看權限；上傳須請管理員開放。')+(appRequest?'按「返回 App 並加入團隊」完成加入。':'複製代碼後，在工影簿的團隊頁貼上並核對權限。'));
+  status('已授權「'+folder.name+'」。'+(folder.capabilities?.canAddChildren?'可查看及上傳。':'目前只有查看權限；上傳須請管理員開放。')+(appRequest?'按「返回 App 確認加入」完成加入。':'複製代碼後，在工影簿的團隊頁貼上並核對權限。'));
  }
  async function authorized(response){
   if(response.error||!response.access_token)throw Error('Google 授權未完成，請重試。');
@@ -37,7 +38,10 @@
   element('account').textContent=identity.user.emailAddress??'';
   const view=new google.picker.DocsView(google.picker.ViewId.FOLDERS).setIncludeFolders(true).setSelectFolderEnabled(true);
   const sharedDrives=new google.picker.DocsView(google.picker.ViewId.FOLDERS).setIncludeFolders(true).setSelectFolderEnabled(true).setEnableDrives(true);
-  picker=new google.picker.PickerBuilder().setAppId(window.GONFOLIO_PICKER.projectNumber).setDeveloperKey(window.GONFOLIO_PICKER.apiKey).setOAuthToken(token).setOrigin(location.origin).addView(view).addView(sharedDrives).setCallback(data=>{
+  if(expectedFolder)view.setFileIds(expectedFolder);
+  const builder=new google.picker.PickerBuilder().setAppId(window.GONFOLIO_PICKER.projectNumber).setDeveloperKey(window.GONFOLIO_PICKER.apiKey).setOAuthToken(token).setOrigin(location.origin).addView(view);
+  if(!expectedFolder)builder.addView(sharedDrives);
+  picker=builder.setCallback(data=>{
    if(data.action===google.picker.Action.PICKED){picker.dispose();picker=null;void chosen(data.docs?.[0],token,account).then(finish,fail);}
    else if(data.action===google.picker.Action.CANCEL){picker.dispose();picker=null;finish();status('已取消選擇，沒有加入團隊。');}
   }).build();picker.setVisible(true);
