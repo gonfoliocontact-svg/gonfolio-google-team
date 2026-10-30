@@ -1,0 +1,14 @@
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>Gonfolio 小權限獨立測試</title><style>body{font:17px system-ui;margin:20px;max-width:800px;color:#183e38}button,input,select,textarea{font:inherit;padding:12px;margin:6px 0;box-sizing:border-box;width:100%}button{background:#e2f4ed;border:1px solid #087f70;border-radius:10px}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f0f5f3;padding:12px}label{display:block}small{display:block;color:#526760}</style></head><body>
+<h1>團隊資料夾小權限測試</h1><p>獨立測試頁，只申請 drive.file。圖片由本頁產生，不讀取手機照片。現有 App 設定不變。</p>
+<label>角色<select id="role"><option value="owner">團長</option><option value="member">團員</option></select></label>
+<label>團長 Google 電郵<input id="owner" type="email"></label><label>團員 Google 電郵<input id="member" type="email"></label>
+<button id="login" disabled>登入測試帳戶</button><p id="identity"></p>
+<button id="prepare" disabled>團長：建立獨立測試資料夾並共用給團員</button>
+<label>測試資料（僅檔案 ID 及驗證碼，不含憑證）<textarea id="manifest" rows="4"></textarea></label>
+<button id="load" disabled>團員：讀入測試資料並檢查授權前可見性</button>
+<button id="pick" disabled>只授權這個團隊根資料夾</button>
+<button id="run" disabled>執行三張自動上傳及日期資料夾測試</button>
+<button id="cross" disabled>團長：核對團員結果</button>
+<button id="export">匯出不含憑證的測試報告</button>
+<p id="status">載入 Google 元件…</p><pre id="report"></pre>
+<script src="config.js"></script><script type="module" src="drive-file-probe.mjs"></script></body></html>
