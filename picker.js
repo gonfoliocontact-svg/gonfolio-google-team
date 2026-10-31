@@ -31,6 +31,9 @@
  }
  async function authorized(response){
   if(response.error||!response.access_token)throw Error('Google 授權未完成，請重試。');
+  const scopes=typeof response.scope==='string'?response.scope.trim().split(/\s+/):[];
+  const allowed=['https://www.googleapis.com/auth/drive.file','openid','email','profile','https://www.googleapis.com/auth/userinfo.email','https://www.googleapis.com/auth/userinfo.profile'];
+  if(!scopes.includes(allowed[0])||scopes.some(s=>!allowed.includes(s)))throw Error('這次登入不是小權限，已停止選擇資料夾。請重新登入。');
   const token=response.access_token;
   const identity=await json('about?fields=user(permissionId,emailAddress)',token);
   const account=identity.user?.permissionId;

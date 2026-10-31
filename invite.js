@@ -8,7 +8,8 @@
   const value=JSON.parse(decodeURIComponent(code.slice(14))),id=x=>typeof x==='string'&&/^[a-zA-Z0-9_!.-]{1,256}$/.test(x);
   if(!value||value.v!==1||!['google','onedrive'].includes(value.provider)||!id(value.folderId)||(value.provider==='onedrive'&&!id(value.driveId)))throw Error();
   // Normalize to a locator only. Never forward identity, authority or credentials from an invite.
-  const normalized='gonfolio-team:'+encodeURIComponent(JSON.stringify({v:1,provider:value.provider,folderId:value.folderId,...(value.provider==='onedrive'?{driveId:value.driveId}:{})}));
+  if(value.layout!==undefined&&(value.layout!=='member-date'||value.provider!=='google'))throw Error();
+  const normalized='gonfolio-team:'+encodeURIComponent(JSON.stringify({v:1,provider:value.provider,folderId:value.folderId,...(value.provider==='onedrive'?{driveId:value.driveId}:{}),...(value.layout?{layout:value.layout}:{})}));
   el('status').textContent='這是 '+(value.provider==='google'?'Google Drive':'OneDrive')+' 團隊邀請。';
   el('code').value=normalized;el('fallback').hidden=false;
   el('open').href='work-camera://join-team?'+new URLSearchParams({code:normalized});el('open').hidden=false;
