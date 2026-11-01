@@ -14,5 +14,8 @@
   el('code').value=normalized;el('fallback').hidden=false;
   el('open').href='work-camera://join-team?'+new URLSearchParams({code:normalized});el('open').hidden=false;
   el('copy').onclick=async()=>{try{await navigator.clipboard.writeText(normalized);el('status').textContent='已複製，請在 App「團隊 → 加入團隊」貼上。';}catch{el('code').select();el('status').textContent='請長按已選取的代碼並複製。';}};
+  // Only a validated locator can launch the App. Some mail browsers require the
+  // explicit button instead; retain it and never loop or auto-confirm joining.
+  try{location.assign(el('open').href);}catch{/* The visible button remains usable. */}
  }catch{el('status').textContent='加入連結無效，請向團長索取新的連結。';}
 })();
